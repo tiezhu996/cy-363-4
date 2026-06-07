@@ -34,6 +34,9 @@ import type {
   PropTheme,
 } from "../types";
 import {
+  addPropItem,
+  updatePropItem,
+  deletePropItem,
   addPropConsumption,
   addPropMaintenance,
   restockPropItem,
@@ -66,11 +69,16 @@ export function PropsInventory({ themesWithItems, themes, onDataChange }: PropsI
   const [maintenanceModalOpen, setMaintenanceModalOpen] = useState(false);
   const [restockModalOpen, setRestockModalOpen] = useState(false);
   const [inspectionModalOpen, setInspectionModalOpen] = useState(false);
+  const [addModalOpen, setAddModalOpen] = useState(false);
+  const [editModalOpen, setEditModalOpen] = useState(false);
   const [currentItem, setCurrentItem] = useState<PropItem | null>(null);
+  const [selectedThemeId, setSelectedThemeId] = useState<number | null>(null);
   const [consumptionForm] = Form.useForm();
   const [maintenanceForm] = Form.useForm();
   const [restockForm] = Form.useForm();
   const [inspectionForm] = Form.useForm();
+  const [addForm] = Form.useForm();
+  const [editForm] = Form.useForm();
   const [loading, setLoading] = useState(false);
 
   const openConsumptionModal = (item: PropItem) => {
@@ -111,6 +119,79 @@ export function PropsInventory({ themesWithItems, themes, onDataChange }: PropsI
         : new Date(Date.now() + 14 * 24 * 60 * 60 * 1000),
     });
     setInspectionModalOpen(true);
+  };
+
+  const openAddModal = (themeId?: number) => {
+    addForm.resetFields();
+    addForm.setFieldsValue({
+      theme_id: themeId,
+      unit: "个",
+      stock_quantity: 0,
+      warning_threshold: 5,
+      inspection_status: "normal",
+    });
+    setSelectedThemeId(themeId || null);
+    setAddModalOpen(true);
+  };
+
+  const openEditModal = (item: PropItem) => {
+    setCurrentItem(item);
+    editForm.resetFields();
+    editForm.setFieldsValue({
+      ...item,
+      last_check_date: item.last_check_date ? new Date(item.last_check_date) : null,
+      next_check_date: item.next_check_date ? new Date(item.next_check_date) : null,
+    });
+    setEditModalOpen(true);
+  };
+
+  const handleAddSubmit = async (values: any) => {
+    setLoading(true);
+    try {
+      const data = {
+        ...values,
+        last_check_date: values.last_check_date ? values.last_check_date.format("YYYY-MM-DD") : null,
+        next_check_date: values.next_check_date ? values.next_check_date.format("YYYY-MM-DD") : null,
+      };
+      await addPropItem(data);
+      message.success("道具添加成功");
+      setAddModalOpen(false);
+      onDataChange();
+    } catch (error: any) {
+      message.error(error.message || "添加失败");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleEditSubmit = async (values: any) => {
+    if (!currentItem) return;
+    setLoading(true);
+    try {
+      const data = {
+        ...values,
+        last_check_date: values.last_check_date ? values.last_check_date.format("YYYY-MM-DD") : null,
+        next_check_date: values.next_check_date ? values.next_check_date.format("YYYY-MM-DD") : null,
+      };
+      await updatePropItem(currentItem.id, data);
+      message.success("道具更新成功");
+      setEditModalOpen(false);
+      onDataChange();
+    } catch (error: any) {
+      message.error(error.message || "更新失败");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDelete = async (item: PropItem) => {
+    try {
+      await deletePropItem(item.id);
+      message.success("道具删除成功");
+      onDataChange();
+    } catch (error: any) {
+      message.error(error.message || "删除失败");
+    }
   };
 
   const handleConsumptionSubmit = async (values: any) => {
@@ -273,7 +354,7 @@ export function PropsInventory({ themesWithItems, themes, onDataChange }: PropsI
     {
       title: "操作",
       key: "actions",
-      width: 240,
+      width: 320,
       fixed: "right",
       render: (_: any, record) => (
         <Space size="small">
@@ -309,6 +390,30 @@ export function PropsInventory({ themesWithItems, themes, onDataChange }: PropsI
           >
             巡检
           </Button>
+          <Button
+            type="link"
+            size="small"
+            icon={<EditOutlined />}
+            onClick={() => openEditModal(record)}
+          >
+            编辑
+          </Button>
+          <Popconfirm
+            title="确认删除"
+            description={`确定要删除道具「${record.name}」吗？`}
+            onConfirm={() => handleDelete(record)}
+            okText="确认"
+            cancelText="取消"
+          >
+            <Button
+              type="link"
+              size="small"
+              danger
+              icon={<DeleteOutlined />}
+            >
+              删除
+            </Button>
+          </Popconfirm>
         </Space>
       ),
     },
@@ -353,9 +458,19 @@ export function PropsInventory({ themesWithItems, themes, onDataChange }: PropsI
               </Tag>
             )}
           </div>
-          <Text type="secondary" style={{ fontSize: "13px" }}>
-            {theme.description}
-          </Text>
+          <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+            <Text type="secondary" style={{ fontSize: "13px" }}>
+              {theme.description}
+            </Text>
+            <Button
+              type="primary"
+              size="small"
+              icon={<PlusOutlined />}
+              onClick={() => openAddModal(theme.id)}
+            >
+              新增道具
+            </Button>
+          </div>
         </div>
         <Table
           columns={columns}
@@ -384,6 +499,9 @@ export function PropsInventory({ themesWithItems, themes, onDataChange }: PropsI
             {themesWithItems.reduce((sum, t) => sum + t.items.filter((i) => i.is_low_stock).length, 0)} 种待补货
           </Text>
         </Space>
+        <Button type="primary" icon={<PlusOutlined />} onClick={() => openAddModal()}>
+          新增道具
+        </Button>
       </div>
 
       <div className="themes-container">
@@ -575,6 +693,190 @@ export function PropsInventory({ themesWithItems, themes, onDataChange }: PropsI
               <Button onClick={() => setInspectionModalOpen(false)}>取消</Button>
               <Button type="primary" htmlType="submit" loading={loading}>
                 确认登记
+              </Button>
+            </Space>
+          </Form.Item>
+        </Form>
+      </Modal>
+
+      <Modal
+        title={
+          <span>
+            <PlusOutlined style={{ color: "#1890ff", marginRight: "8px" }} />
+            新增道具
+          </span>
+        }
+        open={addModalOpen}
+        onCancel={() => setAddModalOpen(false)}
+        footer={null}
+        destroyOnClose
+        width={600}
+      >
+        <Form form={addForm} layout="vertical" onFinish={handleAddSubmit}>
+          <Form.Item
+            label="所属主题"
+            name="theme_id"
+            rules={[{ required: true, message: "请选择主题" }]}
+          >
+            <Select placeholder="请选择主题">
+              {themes.map((theme) => (
+                <Option key={theme.id} value={theme.id}>
+                  {theme.name}
+                </Option>
+              ))}
+            </Select>
+          </Form.Item>
+          <Form.Item
+            label="道具名称"
+            name="name"
+            rules={[{ required: true, message: "请输入道具名称" }]}
+          >
+            <Input placeholder="请输入道具名称" />
+          </Form.Item>
+          <Form.Item label="规格说明" name="specification">
+            <TextArea rows={2} placeholder="请输入规格说明" />
+          </Form.Item>
+          <div style={{ display: "flex", gap: "16px" }}>
+            <Form.Item
+              label="单位"
+              name="unit"
+              style={{ flex: 1 }}
+              rules={[{ required: true }]}
+            >
+              <Input placeholder="如：个、套、卷" />
+            </Form.Item>
+            <Form.Item
+              label="初始库存"
+              name="stock_quantity"
+              style={{ flex: 1 }}
+              rules={[{ required: true }]}
+            >
+              <InputNumber min={0} style={{ width: "100%" }} />
+            </Form.Item>
+            <Form.Item
+              label="预警阈值"
+              name="warning_threshold"
+              style={{ flex: 1 }}
+              rules={[{ required: true }]}
+            >
+              <InputNumber min={0} style={{ width: "100%" }} />
+            </Form.Item>
+          </div>
+          <div style={{ display: "flex", gap: "16px" }}>
+            <Form.Item label="上次巡检日期" name="last_check_date" style={{ flex: 1 }}>
+              <DatePicker style={{ width: "100%" }} />
+            </Form.Item>
+            <Form.Item label="下次巡检日期" name="next_check_date" style={{ flex: 1 }}>
+              <DatePicker style={{ width: "100%" }} />
+            </Form.Item>
+          </div>
+          <Form.Item label="初始状态" name="inspection_status" rules={[{ required: true }]}>
+            <Select>
+              <Option value="normal">正常</Option>
+              <Option value="warning">预警</Option>
+              <Option value="maintenance">维修中</Option>
+            </Select>
+          </Form.Item>
+          <Form.Item label="备注" name="remark">
+            <TextArea rows={2} placeholder="可选备注信息" />
+          </Form.Item>
+          <Form.Item style={{ marginBottom: 0, textAlign: "right" }}>
+            <Space>
+              <Button onClick={() => setAddModalOpen(false)}>取消</Button>
+              <Button type="primary" htmlType="submit" loading={loading}>
+                确认添加
+              </Button>
+            </Space>
+          </Form.Item>
+        </Form>
+      </Modal>
+
+      <Modal
+        title={
+          <span>
+            <EditOutlined style={{ color: "#1890ff", marginRight: "8px" }} />
+            编辑道具 - {currentItem?.name}
+          </span>
+        }
+        open={editModalOpen}
+        onCancel={() => setEditModalOpen(false)}
+        footer={null}
+        destroyOnClose
+        width={600}
+      >
+        <Form form={editForm} layout="vertical" onFinish={handleEditSubmit}>
+          <Form.Item
+            label="所属主题"
+            name="theme_id"
+            rules={[{ required: true, message: "请选择主题" }]}
+          >
+            <Select placeholder="请选择主题">
+              {themes.map((theme) => (
+                <Option key={theme.id} value={theme.id}>
+                  {theme.name}
+                </Option>
+              ))}
+            </Select>
+          </Form.Item>
+          <Form.Item
+            label="道具名称"
+            name="name"
+            rules={[{ required: true, message: "请输入道具名称" }]}
+          >
+            <Input placeholder="请输入道具名称" />
+          </Form.Item>
+          <Form.Item label="规格说明" name="specification">
+            <TextArea rows={2} placeholder="请输入规格说明" />
+          </Form.Item>
+          <div style={{ display: "flex", gap: "16px" }}>
+            <Form.Item
+              label="单位"
+              name="unit"
+              style={{ flex: 1 }}
+              rules={[{ required: true }]}
+            >
+              <Input placeholder="如：个、套、卷" />
+            </Form.Item>
+            <Form.Item
+              label="当前库存"
+              name="stock_quantity"
+              style={{ flex: 1 }}
+              rules={[{ required: true }]}
+            >
+              <InputNumber min={0} style={{ width: "100%" }} />
+            </Form.Item>
+            <Form.Item
+              label="预警阈值"
+              name="warning_threshold"
+              style={{ flex: 1 }}
+              rules={[{ required: true }]}
+            >
+              <InputNumber min={0} style={{ width: "100%" }} />
+            </Form.Item>
+          </div>
+          <div style={{ display: "flex", gap: "16px" }}>
+            <Form.Item label="上次巡检日期" name="last_check_date" style={{ flex: 1 }}>
+              <DatePicker style={{ width: "100%" }} />
+            </Form.Item>
+            <Form.Item label="下次巡检日期" name="next_check_date" style={{ flex: 1 }}>
+              <DatePicker style={{ width: "100%" }} />
+            </Form.Item>
+          </div>
+          <Form.Item label="状态" name="inspection_status" rules={[{ required: true }]}>
+            <Select>
+              <Option value="normal">正常</Option>
+              <Option value="warning">预警</Option>
+              <Option value="maintenance">维修中</Option>
+            </Select>
+          </Form.Item>
+          <Form.Item label="备注" name="remark">
+            <TextArea rows={2} placeholder="可选备注信息" />
+          </Form.Item>
+          <Form.Item style={{ marginBottom: 0, textAlign: "right" }}>
+            <Space>
+              <Button onClick={() => setEditModalOpen(false)}>取消</Button>
+              <Button type="primary" htmlType="submit" loading={loading}>
+                确认修改
               </Button>
             </Space>
           </Form.Item>

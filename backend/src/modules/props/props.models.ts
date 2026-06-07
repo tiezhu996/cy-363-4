@@ -1,7 +1,7 @@
 export interface PropTheme {
   id: number;
   name: string;
-  description: string;
+  description: string | null;
   room_count: number;
   is_active: number;
   created_at: string;
@@ -12,14 +12,14 @@ export interface PropItem {
   id: number;
   theme_id: number;
   name: string;
-  specification: string;
+  specification: string | null;
   unit: string;
   stock_quantity: number;
   warning_threshold: number;
-  last_check_date: string;
-  next_check_date: string;
+  last_check_date: string | null;
+  next_check_date: string | null;
   inspection_status: "normal" | "warning" | "maintenance";
-  remark: string;
+  remark: string | null;
   created_at: string;
   updated_at: string;
   theme_name?: string;
@@ -32,8 +32,8 @@ export interface PropConsumption {
   consumption_date: string;
   quantity: number;
   reason: string;
-  operator: string;
-  remark: string;
+  operator: string | null;
+  remark: string | null;
   created_at: string;
   prop_name?: string;
   theme_name?: string;
@@ -44,11 +44,11 @@ export interface PropMaintenance {
   prop_item_id: number;
   maintenance_date: string;
   type: "repair" | "inspection" | "replacement";
-  description: string;
+  description: string | null;
   cost: number;
-  operator: string;
+  operator: string | null;
   status: "pending" | "in_progress" | "completed";
-  remark: string;
+  remark: string | null;
   created_at: string;
   prop_name?: string;
   theme_name?: string;

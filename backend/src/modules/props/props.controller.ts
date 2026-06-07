@@ -1,31 +1,31 @@
 import type { Request, Response } from "express";
-import { PropsService } from "./props.service";
+import { PropsDbService } from "./props.db.service";
 
-const service = new PropsService();
+const service = new PropsDbService();
 
-export function getDashboard(_request: Request, response: Response) {
-  response.json(service.getDashboard());
+export async function getDashboard(_request: Request, response: Response) {
+  response.json(await service.getDashboard());
 }
 
-export function getThemes(_request: Request, response: Response) {
-  response.json(service.getThemes());
+export async function getThemes(_request: Request, response: Response) {
+  response.json(await service.getThemes());
 }
 
-export function getThemesWithItems(_request: Request, response: Response) {
-  response.json(service.getThemesWithItems());
+export async function getThemesWithItems(_request: Request, response: Response) {
+  response.json(await service.getThemesWithItems());
 }
 
-export function getItems(request: Request, response: Response) {
+export async function getItems(request: Request, response: Response) {
   const themeId = request.query.themeId ? Number(request.query.themeId) : undefined;
-  response.json(service.getItemsByTheme(themeId));
+  response.json(await service.getItemsByTheme(themeId));
 }
 
-export function addItem(request: Request, response: Response) {
+export async function addItem(request: Request, response: Response) {
   const data = request.body;
   if (!data.theme_id || !data.name) {
     return response.status(400).json({ error: "theme_id and name are required" });
   }
-  const result = service.addItem({
+  const result = await service.addItem({
     theme_id: data.theme_id,
     name: data.name,
     specification: data.specification || "",
@@ -40,57 +40,57 @@ export function addItem(request: Request, response: Response) {
   response.json(result);
 }
 
-export function updateItem(request: Request, response: Response) {
+export async function updateItem(request: Request, response: Response) {
   const id = Number(request.params.id);
   const data = request.body;
-  const result = service.updateItem(id, data);
+  const result = await service.updateItem(id, data);
   if (!result) {
     return response.status(404).json({ error: "Item not found" });
   }
   response.json(result);
 }
 
-export function deleteItem(request: Request, response: Response) {
+export async function deleteItem(request: Request, response: Response) {
   const id = Number(request.params.id);
-  const success = service.deleteItem(id);
+  const success = await service.deleteItem(id);
   if (!success) {
     return response.status(404).json({ error: "Item not found" });
   }
   response.json({ success: true });
 }
 
-export function restockItem(request: Request, response: Response) {
+export async function restockItem(request: Request, response: Response) {
   const id = Number(request.params.id);
   const { quantity } = request.body;
   if (!quantity || quantity <= 0) {
     return response.status(400).json({ error: "Invalid quantity" });
   }
-  const result = service.restockItem(id, quantity);
+  const result = await service.restockItem(id, quantity);
   if (!result) {
     return response.status(404).json({ error: "Item not found" });
   }
   response.json(result);
 }
 
-export function updateInspection(request: Request, response: Response) {
+export async function updateInspection(request: Request, response: Response) {
   const id = Number(request.params.id);
   const { last_check_date, next_check_date } = request.body;
   if (!last_check_date || !next_check_date) {
     return response.status(400).json({ error: "last_check_date and next_check_date are required" });
   }
-  const result = service.updateInspection(id, last_check_date, next_check_date);
+  const result = await service.updateInspection(id, last_check_date, next_check_date);
   if (!result) {
     return response.status(404).json({ error: "Item not found" });
   }
   response.json(result);
 }
 
-export function addConsumption(request: Request, response: Response) {
+export async function addConsumption(request: Request, response: Response) {
   const data = request.body;
   if (!data.prop_item_id || !data.quantity || !data.reason) {
     return response.status(400).json({ error: "prop_item_id, quantity, and reason are required" });
   }
-  const result = service.addConsumption({
+  const result = await service.addConsumption({
     prop_item_id: data.prop_item_id,
     consumption_date: data.consumption_date || new Date().toISOString().split("T")[0],
     quantity: data.quantity,
@@ -104,17 +104,17 @@ export function addConsumption(request: Request, response: Response) {
   response.json(result);
 }
 
-export function getConsumptions(request: Request, response: Response) {
+export async function getConsumptions(request: Request, response: Response) {
   const propItemId = request.query.propItemId ? Number(request.query.propItemId) : undefined;
-  response.json(service.getConsumptions(propItemId));
+  response.json(await service.getConsumptions(propItemId));
 }
 
-export function addMaintenance(request: Request, response: Response) {
+export async function addMaintenance(request: Request, response: Response) {
   const data = request.body;
   if (!data.prop_item_id || !data.type) {
     return response.status(400).json({ error: "prop_item_id and type are required" });
   }
-  const result = service.addMaintenance({
+  const result = await service.addMaintenance({
     prop_item_id: data.prop_item_id,
     maintenance_date: data.maintenance_date || new Date().toISOString().split("T")[0],
     type: data.type,
@@ -130,17 +130,17 @@ export function addMaintenance(request: Request, response: Response) {
   response.json(result);
 }
 
-export function updateMaintenance(request: Request, response: Response) {
+export async function updateMaintenance(request: Request, response: Response) {
   const id = Number(request.params.id);
   const data = request.body;
-  const result = service.updateMaintenance(id, data);
+  const result = await service.updateMaintenance(id, data);
   if (!result) {
     return response.status(404).json({ error: "Maintenance record not found" });
   }
   response.json(result);
 }
 
-export function getMaintenances(request: Request, response: Response) {
+export async function getMaintenances(request: Request, response: Response) {
   const propItemId = request.query.propItemId ? Number(request.query.propItemId) : undefined;
-  response.json(service.getMaintenances(propItemId));
+  response.json(await service.getMaintenances(propItemId));
 }
