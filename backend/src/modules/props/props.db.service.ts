@@ -12,35 +12,8 @@ import type {
   PropDashboardStats,
   PropThemeWithItems,
 } from "./props.models";
-import { PropsService as MemoryPropsService } from "./props.service";
 
 export class PropsDbService {
-  private memoryService: MemoryPropsService | null = null;
-  private useDatabase: boolean = true;
-
-  constructor() {
-    this.checkDatabaseConnection();
-  }
-
-  private async checkDatabaseConnection(): Promise<void> {
-    try {
-      await PropTheme.count();
-      this.useDatabase = true;
-      console.log("[PropsDbService] Using database persistence");
-    } catch (error) {
-      console.warn("[PropsDbService] Database not available, falling back to memory storage");
-      this.useDatabase = false;
-      this.memoryService = new MemoryPropsService();
-    }
-  }
-
-  private async ensureDatabase(): Promise<boolean> {
-    if (!this.useDatabase) {
-      await this.checkDatabaseConnection();
-    }
-    return this.useDatabase;
-  }
-
   private formatItem(item: PropItem, themeName?: string): PropItemType {
     const plain = item.get({ plain: true });
     return {
@@ -81,9 +54,6 @@ export class PropsDbService {
   }
 
   async getThemes(): Promise<PropThemeType[]> {
-    if (!(await this.ensureDatabase())) {
-      return this.memoryService!.getThemes();
-    }
     const themes = await PropTheme.findAll({ where: { is_active: 1 } });
     return themes.map((t) => {
       const plain = t.get({ plain: true });
@@ -96,9 +66,6 @@ export class PropsDbService {
   }
 
   async getItemsByTheme(themeId?: number): Promise<PropItemType[]> {
-    if (!(await this.ensureDatabase())) {
-      return this.memoryService!.getItemsByTheme(themeId);
-    }
     const where: any = {};
     if (themeId) {
       where.theme_id = themeId;
@@ -114,9 +81,6 @@ export class PropsDbService {
   }
 
   async getThemesWithItems(): Promise<PropThemeWithItems[]> {
-    if (!(await this.ensureDatabase())) {
-      return this.memoryService!.getThemesWithItems();
-    }
     const themes = await PropTheme.findAll({
       where: { is_active: 1 },
       include: [
@@ -145,18 +109,12 @@ export class PropsDbService {
   async addItem(
     item: Omit<PropItemType, "id" | "created_at" | "updated_at" | "is_low_stock" | "theme_name">
   ): Promise<PropItemType> {
-    if (!(await this.ensureDatabase())) {
-      return this.memoryService!.addItem(item);
-    }
     const newItem = await PropItem.create(item as any);
     const theme = await PropTheme.findByPk(item.theme_id);
     return this.formatItem(newItem, theme?.name);
   }
 
   async updateItem(id: number, updates: Partial<PropItemType>): Promise<PropItemType | null> {
-    if (!(await this.ensureDatabase())) {
-      return this.memoryService!.updateItem(id, updates);
-    }
     const item = await PropItem.findByPk(id, {
       include: [{ model: PropTheme, as: "theme", attributes: ["name"] }],
     });
@@ -169,9 +127,6 @@ export class PropsDbService {
   }
 
   async deleteItem(id: number): Promise<boolean> {
-    if (!(await this.ensureDatabase())) {
-      return this.memoryService!.deleteItem(id);
-    }
     const result = await PropItem.destroy({ where: { id } });
     return result > 0;
   }
@@ -179,9 +134,6 @@ export class PropsDbService {
   async addConsumption(
     data: Omit<PropConsumptionType, "id" | "created_at" | "prop_name" | "theme_name">
   ): Promise<PropConsumptionType | null> {
-    if (!(await this.ensureDatabase())) {
-      return this.memoryService!.addConsumption(data);
-    }
     const item = await PropItem.findByPk(data.prop_item_id, {
       include: [{ model: PropTheme, as: "theme", attributes: ["name"] }],
     });
@@ -200,9 +152,6 @@ export class PropsDbService {
   }
 
   async getConsumptions(propItemId?: number): Promise<PropConsumptionType[]> {
-    if (!(await this.ensureDatabase())) {
-      return this.memoryService!.getConsumptions(propItemId);
-    }
     const where: any = {};
     if (propItemId) {
       where.prop_item_id = propItemId;
@@ -228,9 +177,6 @@ export class PropsDbService {
   async addMaintenance(
     data: Omit<PropMaintenanceType, "id" | "created_at" | "prop_name" | "theme_name">
   ): Promise<PropMaintenanceType | null> {
-    if (!(await this.ensureDatabase())) {
-      return this.memoryService!.addMaintenance(data);
-    }
     const item = await PropItem.findByPk(data.prop_item_id, {
       include: [{ model: PropTheme, as: "theme", attributes: ["name"] }],
     });
@@ -250,9 +196,6 @@ export class PropsDbService {
     id: number,
     updates: Partial<PropMaintenanceType>
   ): Promise<PropMaintenanceType | null> {
-    if (!(await this.ensureDatabase())) {
-      return this.memoryService!.updateMaintenance(id, updates);
-    }
     const maintenance = await PropMaintenance.findByPk(id, {
       include: [
         {
@@ -291,9 +234,6 @@ export class PropsDbService {
   }
 
   async getMaintenances(propItemId?: number): Promise<PropMaintenanceType[]> {
-    if (!(await this.ensureDatabase())) {
-      return this.memoryService!.getMaintenances(propItemId);
-    }
     const where: any = {};
     if (propItemId) {
       where.prop_item_id = propItemId;
@@ -317,9 +257,6 @@ export class PropsDbService {
   }
 
   async getDashboard(): Promise<PropDashboardResponse> {
-    if (!(await this.ensureDatabase())) {
-      return this.memoryService!.getDashboard();
-    }
     const allItems = await PropItem.findAll({
       include: [{ model: PropTheme, as: "theme", attributes: ["name"] }],
     });
@@ -392,9 +329,6 @@ export class PropsDbService {
   }
 
   async restockItem(id: number, quantity: number): Promise<PropItemType | null> {
-    if (!(await this.ensureDatabase())) {
-      return this.memoryService!.restockItem(id, quantity);
-    }
     const item = await PropItem.findByPk(id, {
       include: [{ model: PropTheme, as: "theme", attributes: ["name"] }],
     });
@@ -415,9 +349,6 @@ export class PropsDbService {
     lastCheckDate: string,
     nextCheckDate: string
   ): Promise<PropItemType | null> {
-    if (!(await this.ensureDatabase())) {
-      return this.memoryService!.updateInspection(id, lastCheckDate, nextCheckDate);
-    }
     const item = await PropItem.findByPk(id, {
       include: [{ model: PropTheme, as: "theme", attributes: ["name"] }],
     });
