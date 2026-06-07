@@ -1,6 +1,5 @@
 import { DataTypes, Model, Optional } from "sequelize";
-import { sequelize } from "../config/database";
-import { PropItem } from "./PropItem";
+import type { Sequelize } from "sequelize";
 
 interface PropConsumptionModel {
   id: number;
@@ -33,65 +32,60 @@ export class PropConsumption extends Model<PropConsumptionModel, PropConsumption
   public theme_name!: string;
 }
 
-PropConsumption.init(
-  {
-    id: {
-      type: DataTypes.INTEGER,
-      autoIncrement: true,
-      primaryKey: true,
-    },
-    prop_item_id: {
-      type: DataTypes.INTEGER,
-      allowNull: false,
-      references: {
-        model: PropItem,
-        key: "id",
+export function initPropConsumption(sequelize: Sequelize) {
+  PropConsumption.init(
+    {
+      id: {
+        type: DataTypes.INTEGER,
+        autoIncrement: true,
+        primaryKey: true,
+      },
+      prop_item_id: {
+        type: DataTypes.INTEGER,
+        allowNull: false,
+      },
+      consumption_date: {
+        type: DataTypes.DATEONLY,
+        allowNull: false,
+      },
+      quantity: {
+        type: DataTypes.INTEGER,
+        allowNull: false,
+      },
+      reason: {
+        type: DataTypes.STRING(200),
+        allowNull: false,
+      },
+      operator: {
+        type: DataTypes.STRING(50),
+        allowNull: true,
+      },
+      remark: {
+        type: DataTypes.TEXT,
+        allowNull: true,
+      },
+      created_at: {
+        type: DataTypes.DATE,
+        defaultValue: DataTypes.NOW,
+      },
+      prop_name: {
+        type: DataTypes.VIRTUAL,
+        get(): string {
+          return this.getDataValue("prop_name") || "";
+        },
+      },
+      theme_name: {
+        type: DataTypes.VIRTUAL,
+        get(): string {
+          return this.getDataValue("theme_name") || "";
+        },
       },
     },
-    consumption_date: {
-      type: DataTypes.DATEONLY,
-      allowNull: false,
-    },
-    quantity: {
-      type: DataTypes.INTEGER,
-      allowNull: false,
-    },
-    reason: {
-      type: DataTypes.STRING(200),
-      allowNull: false,
-    },
-    operator: {
-      type: DataTypes.STRING(50),
-      allowNull: true,
-    },
-    remark: {
-      type: DataTypes.TEXT,
-      allowNull: true,
-    },
-    created_at: {
-      type: DataTypes.DATE,
-      defaultValue: DataTypes.NOW,
-    },
-    prop_name: {
-      type: DataTypes.VIRTUAL,
-      get(): string {
-        return this.getDataValue("prop_name") || "";
-      },
-    },
-    theme_name: {
-      type: DataTypes.VIRTUAL,
-      get(): string {
-        return this.getDataValue("theme_name") || "";
-      },
-    },
-  },
-  {
-    sequelize,
-    tableName: "prop_consumptions",
-    timestamps: false,
-    createdAt: "created_at",
-  }
-);
-
-PropConsumption.belongsTo(PropItem, { foreignKey: "prop_item_id", as: "item" });
-PropItem.hasMany(PropConsumption, { foreignKey: "prop_item_id", as: "consumptions" });
+    {
+      sequelize,
+      tableName: "prop_consumptions",
+      timestamps: false,
+      createdAt: "created_at",
+    }
+  );
+}

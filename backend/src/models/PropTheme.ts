@@ -1,5 +1,5 @@
 import { DataTypes, Model, Optional } from "sequelize";
-import { sequelize } from "../config/database";
+import type { Sequelize } from "sequelize";
 
 interface PropThemeModel {
   id: number;
@@ -23,43 +23,45 @@ export class PropTheme extends Model<PropThemeModel, PropThemeCreationAttributes
   public updated_at!: Date;
 }
 
-PropTheme.init(
-  {
-    id: {
-      type: DataTypes.INTEGER,
-      autoIncrement: true,
-      primaryKey: true,
+export function initPropTheme(sequelize: Sequelize) {
+  PropTheme.init(
+    {
+      id: {
+        type: DataTypes.INTEGER,
+        autoIncrement: true,
+        primaryKey: true,
+      },
+      name: {
+        type: DataTypes.STRING(100),
+        allowNull: false,
+      },
+      description: {
+        type: DataTypes.TEXT,
+        allowNull: true,
+      },
+      room_count: {
+        type: DataTypes.INTEGER,
+        defaultValue: 0,
+      },
+      is_active: {
+        type: DataTypes.TINYINT,
+        defaultValue: 1,
+      },
+      created_at: {
+        type: DataTypes.DATE,
+        defaultValue: DataTypes.NOW,
+      },
+      updated_at: {
+        type: DataTypes.DATE,
+        defaultValue: DataTypes.NOW,
+      },
     },
-    name: {
-      type: DataTypes.STRING(100),
-      allowNull: false,
-    },
-    description: {
-      type: DataTypes.TEXT,
-      allowNull: true,
-    },
-    room_count: {
-      type: DataTypes.INTEGER,
-      defaultValue: 0,
-    },
-    is_active: {
-      type: DataTypes.TINYINT,
-      defaultValue: 1,
-    },
-    created_at: {
-      type: DataTypes.DATE,
-      defaultValue: DataTypes.NOW,
-    },
-    updated_at: {
-      type: DataTypes.DATE,
-      defaultValue: DataTypes.NOW,
-    },
-  },
-  {
-    sequelize,
-    tableName: "prop_themes",
-    timestamps: true,
-    createdAt: "created_at",
-    updatedAt: "updated_at",
-  }
-);
+    {
+      sequelize,
+      tableName: "prop_themes",
+      timestamps: true,
+      createdAt: "created_at",
+      updatedAt: "updated_at",
+    }
+  );
+}

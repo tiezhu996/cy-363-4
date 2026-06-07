@@ -1,6 +1,5 @@
 import { DataTypes, Model, Optional } from "sequelize";
-import { sequelize } from "../config/database";
-import { PropItem } from "./PropItem";
+import type { Sequelize } from "sequelize";
 
 interface PropMaintenanceModel {
   id: number;
@@ -37,73 +36,68 @@ export class PropMaintenance extends Model<PropMaintenanceModel, PropMaintenance
   public theme_name!: string;
 }
 
-PropMaintenance.init(
-  {
-    id: {
-      type: DataTypes.INTEGER,
-      autoIncrement: true,
-      primaryKey: true,
-    },
-    prop_item_id: {
-      type: DataTypes.INTEGER,
-      allowNull: false,
-      references: {
-        model: PropItem,
-        key: "id",
+export function initPropMaintenance(sequelize: Sequelize) {
+  PropMaintenance.init(
+    {
+      id: {
+        type: DataTypes.INTEGER,
+        autoIncrement: true,
+        primaryKey: true,
+      },
+      prop_item_id: {
+        type: DataTypes.INTEGER,
+        allowNull: false,
+      },
+      maintenance_date: {
+        type: DataTypes.DATEONLY,
+        allowNull: false,
+      },
+      type: {
+        type: DataTypes.STRING(20),
+        allowNull: false,
+      },
+      description: {
+        type: DataTypes.TEXT,
+        allowNull: true,
+      },
+      cost: {
+        type: DataTypes.DECIMAL(10, 2),
+        defaultValue: 0,
+      },
+      operator: {
+        type: DataTypes.STRING(50),
+        allowNull: true,
+      },
+      status: {
+        type: DataTypes.STRING(20),
+        defaultValue: "completed",
+      },
+      remark: {
+        type: DataTypes.TEXT,
+        allowNull: true,
+      },
+      created_at: {
+        type: DataTypes.DATE,
+        defaultValue: DataTypes.NOW,
+      },
+      prop_name: {
+        type: DataTypes.VIRTUAL,
+        get(): string {
+          return this.getDataValue("prop_name") || "";
+        },
+      },
+      theme_name: {
+        type: DataTypes.VIRTUAL,
+        get(): string {
+          return this.getDataValue("theme_name") || "";
+        },
       },
     },
-    maintenance_date: {
-      type: DataTypes.DATEONLY,
-      allowNull: false,
-    },
-    type: {
-      type: DataTypes.STRING(20),
-      allowNull: false,
-    },
-    description: {
-      type: DataTypes.TEXT,
-      allowNull: true,
-    },
-    cost: {
-      type: DataTypes.DECIMAL(10, 2),
-      defaultValue: 0,
-    },
-    operator: {
-      type: DataTypes.STRING(50),
-      allowNull: true,
-    },
-    status: {
-      type: DataTypes.STRING(20),
-      defaultValue: "completed",
-    },
-    remark: {
-      type: DataTypes.TEXT,
-      allowNull: true,
-    },
-    created_at: {
-      type: DataTypes.DATE,
-      defaultValue: DataTypes.NOW,
-    },
-    prop_name: {
-      type: DataTypes.VIRTUAL,
-      get(): string {
-        return this.getDataValue("prop_name") || "";
-      },
-    },
-    theme_name: {
-      type: DataTypes.VIRTUAL,
-      get(): string {
-        return this.getDataValue("theme_name") || "";
-      },
-    },
-  },
-  {
-    sequelize,
-    tableName: "prop_maintenances",
-    timestamps: false,
-    createdAt: "created_at",
-  }
-);
-
-PropMaintenance.belongsTo(PropItem, { foreignKey: "prop_item_id", as: "item" });
-PropItem.hasMany(PropMaintenance, { foreignKey: "prop_item_id", as: "maintenances" });
+    {
+      sequelize,
+      tableName: "prop_maintenances",
+      timestamps: false,
+      createdAt: "created_at",
+    }
+  );
+}

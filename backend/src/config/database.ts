@@ -1,9 +1,6 @@
 import { Sequelize } from "sequelize";
 import { env } from "./env";
-import { PropTheme } from "../models/PropTheme";
-import { PropItem } from "../models/PropItem";
-import { PropConsumption } from "../models/PropConsumption";
-import { PropMaintenance } from "../models/PropMaintenance";
+import { initModels, PropTheme, PropItem, PropConsumption, PropMaintenance } from "../models";
 import { localPropThemes, localPropItems, localPropConsumptions, localPropMaintenances } from "../modules/props/props.data";
 
 export const sequelize = new Sequelize(env.dbName, env.dbUser, env.dbPassword, {
@@ -26,6 +23,8 @@ export async function connectDatabase() {
 
 export async function initDatabase(forceSync: boolean = false) {
   await connectDatabase();
+
+  initModels(sequelize);
 
   await sequelize.sync({ force: forceSync, alter: !forceSync });
   console.log("Database models synchronized.");

@@ -1,6 +1,5 @@
 import { DataTypes, Model, Optional } from "sequelize";
-import { sequelize } from "../config/database";
-import { PropTheme } from "./PropTheme";
+import type { Sequelize } from "sequelize";
 
 interface PropItemModel {
   id: number;
@@ -43,86 +42,81 @@ export class PropItem extends Model<PropItemModel, PropItemCreationAttributes> {
   public theme_name!: string;
 }
 
-PropItem.init(
-  {
-    id: {
-      type: DataTypes.INTEGER,
-      autoIncrement: true,
-      primaryKey: true,
-    },
-    theme_id: {
-      type: DataTypes.INTEGER,
-      allowNull: false,
-      references: {
-        model: PropTheme,
-        key: "id",
+export function initPropItem(sequelize: Sequelize) {
+  PropItem.init(
+    {
+      id: {
+        type: DataTypes.INTEGER,
+        autoIncrement: true,
+        primaryKey: true,
+      },
+      theme_id: {
+        type: DataTypes.INTEGER,
+        allowNull: false,
+      },
+      name: {
+        type: DataTypes.STRING(100),
+        allowNull: false,
+      },
+      specification: {
+        type: DataTypes.STRING(200),
+        allowNull: true,
+      },
+      unit: {
+        type: DataTypes.STRING(20),
+        defaultValue: "个",
+      },
+      stock_quantity: {
+        type: DataTypes.INTEGER,
+        defaultValue: 0,
+      },
+      warning_threshold: {
+        type: DataTypes.INTEGER,
+        defaultValue: 5,
+      },
+      last_check_date: {
+        type: DataTypes.DATEONLY,
+        allowNull: true,
+      },
+      next_check_date: {
+        type: DataTypes.DATEONLY,
+        allowNull: true,
+      },
+      inspection_status: {
+        type: DataTypes.STRING(20),
+        defaultValue: "normal",
+      },
+      remark: {
+        type: DataTypes.TEXT,
+        allowNull: true,
+      },
+      created_at: {
+        type: DataTypes.DATE,
+        defaultValue: DataTypes.NOW,
+      },
+      updated_at: {
+        type: DataTypes.DATE,
+        defaultValue: DataTypes.NOW,
+      },
+      is_low_stock: {
+        type: DataTypes.VIRTUAL,
+        get(): boolean {
+          return this.stock_quantity <= this.warning_threshold;
+        },
+      },
+      theme_name: {
+        type: DataTypes.VIRTUAL,
+        get(): string {
+          return this.getDataValue("theme_name") || "";
+        },
       },
     },
-    name: {
-      type: DataTypes.STRING(100),
-      allowNull: false,
-    },
-    specification: {
-      type: DataTypes.STRING(200),
-      allowNull: true,
-    },
-    unit: {
-      type: DataTypes.STRING(20),
-      defaultValue: "个",
-    },
-    stock_quantity: {
-      type: DataTypes.INTEGER,
-      defaultValue: 0,
-    },
-    warning_threshold: {
-      type: DataTypes.INTEGER,
-      defaultValue: 5,
-    },
-    last_check_date: {
-      type: DataTypes.DATEONLY,
-      allowNull: true,
-    },
-    next_check_date: {
-      type: DataTypes.DATEONLY,
-      allowNull: true,
-    },
-    inspection_status: {
-      type: DataTypes.STRING(20),
-      defaultValue: "normal",
-    },
-    remark: {
-      type: DataTypes.TEXT,
-      allowNull: true,
-    },
-    created_at: {
-      type: DataTypes.DATE,
-      defaultValue: DataTypes.NOW,
-    },
-    updated_at: {
-      type: DataTypes.DATE,
-      defaultValue: DataTypes.NOW,
-    },
-    is_low_stock: {
-      type: DataTypes.VIRTUAL,
-      get(): boolean {
-        return this.stock_quantity <= this.warning_threshold;
-      },
-    },
-    theme_name: {
-      type: DataTypes.VIRTUAL,
-      get(): string {
-        return this.getDataValue("theme_name") || "";
-      },
-    },
-  },
-  {
-    sequelize,
-    tableName: "prop_items",
-    timestamps: true,
-    createdAt: "created_at",
-    updatedAt: "updated_at",
-  }
-);
-
-PropItem.belongsTo(PropTheme, { foreignKey: "theme_id", as: "theme" });
-PropTheme.hasMany(PropItem, { foreignKey: "theme_id", as: "items" });
+    {
+      sequelize,
+      tableName: "prop_items",
+      timestamps: true,
+      createdAt: "created_at",
+      updatedAt: "updated_at",
+    }
+  );
+}
