@@ -1,3 +1,7 @@
+import * as dotenv from "dotenv";
+
+dotenv.config();
+
 export const env = {
   port: Number(process.env.PORT ?? 29503),
   dbHost: process.env.DB_HOST ?? "localhost",
